@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "modname",
+  "version-string": "0.1.0.0",
+  "dependencies": [
+    "fast-cpp-csv-parser",
+    "rsm-binary-io",
+    "spdlog",
+    "xbyak",
+    "rapidcsv",
+    "clib-util",
+    "clib-utils-qtr",
+    "skyprompt-api",
+    "directxtk",
+    "skse-mcp"
+  ],
+  "overrides": [
+    {
+      "name": "fmt",
+      "version": "9.1.0"
+    }
+  ],
+  "builtin-baseline": "78b61582c9e093fda56a01ebb654be15a0033897"
+}
