@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "name": "modname",
+  "name": "in-game-patcher",
   "version-string": "0.1.0.0",
   "dependencies": [
     "fast-cpp-csv-parser",

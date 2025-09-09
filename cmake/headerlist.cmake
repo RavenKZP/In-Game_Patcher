@@ -8,4 +8,9 @@ set(headers ${headers}
 	include/Hooks.h
 	include/MCP.h
 	include/Serialization.h
+	include/Raycast.h
+	include/RayCollector.h
+	include/BOS.h
+	include/SPID.h
+	include/KID.h
 )
