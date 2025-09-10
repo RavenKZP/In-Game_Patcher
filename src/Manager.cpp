@@ -31,6 +31,7 @@ std::span<const SkyPromptAPI::Prompt> PatcherPromptSink::GetPrompts() const {
 
 void PatcherPromptSink::ProcessEvent(SkyPromptAPI::PromptEvent event) const {
     if (event.type == SkyPromptAPI::PromptEventType::kAccepted) {
+        static RE::TESObjectREFR* dragginObj = nullptr;
         if (event.prompt.eventID == 1) {
             if (event.prompt.actionID == 1) {
                 auto ref = RE::TESForm::LookupByID<RE::TESObjectREFR>(event.prompt.refid);
@@ -38,6 +39,7 @@ void PatcherPromptSink::ProcessEvent(SkyPromptAPI::PromptEvent event) const {
                     SkyPromptAPI::RemovePrompt(PatcherPromptSink::GetSingleton(), clientID);
                     BOSIniManager::GetSingleton()->RememberOriginal(ref);
                     ObjectManipulationOverhaul::StartDraggingObject(ref);
+                    dragginObj = ref;
                     dragging = true;
                     logger::info("Started dragging object: {}", ref->GetName());
                     SkyPromptAPI::SendPrompt(PatcherPromptSink::GetSingleton(), clientID);
@@ -54,7 +56,12 @@ void PatcherPromptSink::ProcessEvent(SkyPromptAPI::PromptEvent event) const {
                 SkyPromptAPI::SendPrompt(PatcherPromptSink::GetSingleton(), clientID);
             } else if (event.prompt.actionID == 6) {
                 SkyPromptAPI::RemovePrompt(PatcherPromptSink::GetSingleton(), clientID);
+                if (dragginObj) {
+                    BOSIniManager::GetSingleton()->TransformObject(dragginObj);
+                }
+                dragginObj = nullptr;
                 dragging = false;
+                SkyPromptAPI::SendPrompt(PatcherPromptSink::GetSingleton(), clientID);
             }
         }
         else if (event.prompt.eventID == 2) {
@@ -67,29 +74,32 @@ void PatcherPromptSink::ProcessEvent(SkyPromptAPI::PromptEvent event) const {
                  SkyPromptAPI::RemovePrompt(PatcherPromptSink::GetSingleton(), clientID);
              } else if (event.prompt.actionID == 6) {
                  SkyPromptAPI::RemovePrompt(PatcherPromptSink::GetSingleton(), clientID);
+                 dragginObj = nullptr;
                  dragging = false;
+                 SkyPromptAPI::SendPrompt(PatcherPromptSink::GetSingleton(), clientID);
              }
         }
         else if(event.prompt.eventID == 3) {
             if (event.prompt.actionID == 3) {
+                SkyPromptAPI::RemovePrompt(PatcherPromptSink::GetSingleton(), clientID);
                 auto ref = RE::TESForm::LookupByID<RE::TESObjectREFR>(event.prompt.refid);
                 if (ref) {
                     BOSIniManager::GetSingleton()->TransformObject(ref);
                 }
-                SkyPromptAPI::RemovePrompt(PatcherPromptSink::GetSingleton(), clientID);
+                SkyPromptAPI::SendPrompt(PatcherPromptSink::GetSingleton(), clientID);
             }
         } else if (event.prompt.eventID == 4) {
             if (event.prompt.actionID == 4) {
+                SkyPromptAPI::RemovePrompt(PatcherPromptSink::GetSingleton(), clientID);
                 auto ref = RE::TESForm::LookupByID<RE::TESObjectREFR>(event.prompt.refid);
                 if (ref) {
                     BOSIniManager::GetSingleton()->ResetObject(ref);
                 }
-                SkyPromptAPI::RemovePrompt(PatcherPromptSink::GetSingleton(), clientID);
+                SkyPromptAPI::SendPrompt(PatcherPromptSink::GetSingleton(), clientID);
             }
-        }
-        else if (event.prompt.eventID == 5 && event.prompt.actionID == 6) {
-            advancedHints = !advancedHints;
+        } else if (event.prompt.eventID == 5 && event.prompt.actionID == 6) {
             SkyPromptAPI::RemovePrompt(PatcherPromptSink::GetSingleton(), clientID);
+            advancedHints = !advancedHints;
             SkyPromptAPI::SendPrompt(PatcherPromptSink::GetSingleton(), clientID);
         }
     } else if (event.type == SkyPromptAPI::PromptEventType::kDeclined) {

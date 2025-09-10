@@ -164,11 +164,11 @@ bool BOSIniManager::SetFile(std::string newFilePatch) {
     return true;
 }
 
-
 void BOSIniManager::AddReference(const BOSReference& ref) {
     newReferences[ref.origRefID] = ref;
     Save();
 }
+
 void BOSIniManager::AddTransform(const BOSTransform& tr) {
     newTransforms[tr.origRefID] = tr;
     Save();
@@ -211,9 +211,9 @@ void BOSIniManager::RemoveObject(RE::TESObjectREFR* ref) {
      std::string PositionY = std::to_string(ref->GetPositionY());
      std::string PositionZ = std::to_string(ref->GetPositionZ());
 
-     std::string RotationX = std::to_string(ref->GetAngleX());
-     std::string RotationY = std::to_string(ref->GetAngleY());
-     std::string RotationZ = std::to_string(ref->GetAngleZ());
+     std::string RotationX = std::to_string(RE::rad_to_deg(ref->GetAngleX()));
+     std::string RotationY = std::to_string(RE::rad_to_deg(ref->GetAngleY()));
+     std::string RotationZ = std::to_string(RE::rad_to_deg(ref->GetAngleZ()));
 
      std::string Scale = std::to_string(ref->GetScale());
 
@@ -242,7 +242,7 @@ void BOSIniManager::RemoveObject(RE::TESObjectREFR* ref) {
          if (posChanged || rotChanged) {
              newTransform.propertyOverrides += ",";
          }
-         newTransform.propertyOverrides += ",scale(" + Scale + ")";
+         newTransform.propertyOverrides += "scaleA(" + Scale + ")";
      }
      
      AddTransform(newTransform);

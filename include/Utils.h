@@ -1,5 +1,7 @@
 #pragma once
 
+inline REL::Version Version;
+
 struct OverridesData {
     bool hasPos = false;
     bool hasRot = false;

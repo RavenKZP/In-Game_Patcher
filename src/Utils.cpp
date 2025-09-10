@@ -117,23 +117,16 @@ namespace Utils {
         if (!ref) return nullptr;
 
         uint32_t formID = ref->GetFormID();
-        uint8_t modIndex = static_cast<uint8_t>(formID >> 24);  // upper byte
+        uint8_t modIndex = static_cast<uint8_t>(formID >> 24);
 
         auto dataHandler = RE::TESDataHandler::GetSingleton();
         if (!dataHandler) return nullptr;
 
-        // Handle ESL (0xFE) or dynamic (0xFF) if needed
-        if (modIndex == 0xFE || modIndex == 0xFF) {
-            // For ESL: the next byte contains the ESL index
-            if (modIndex == 0xFE) {
-                uint8_t eslIndex = (formID >> 12) & 0xFF;
-                return dataHandler->LookupLoadedLightModByIndex(eslIndex);
-            }
-            // Dynamic refs don’t have a master file
-            return nullptr;
+        if (modIndex == 0xFE) {
+            uint8_t eslIndex = (formID >> 12) & 0xFFF;
+            return dataHandler->LookupLoadedLightModByIndex(eslIndex);
         }
 
-        // Standard plugin
         return dataHandler->LookupLoadedModByIndex(modIndex);
     }
 

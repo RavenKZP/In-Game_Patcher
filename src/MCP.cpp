@@ -34,20 +34,15 @@ namespace MCP {
         ImGui::Separator();
 
         ImGui::Checkbox("Patching Mode", &PatchingMode);
-
-        REL::Relocation<std::uint8_t*> bShowMarkers{REL::ID(381022)};
-        REL::Relocation<std::uint8_t*> bLoadMarkers{REL::ID(381019)};
-
-        bool showMarkers = *bShowMarkers;
-        if (ImGui::Checkbox("Show Editor Markers", &showMarkers)) {
-            *bLoadMarkers = showMarkers;
-            *bShowMarkers = showMarkers;
-        }
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Requires cell reload to take effect.");
+        
+        RE::TESObjectREFR* ref = nullptr;
+        
+        if (Version <= REL::Version(1, 6, 640)) {
+            ref = RE::Console::GetSelectedRef640().get();  // AE offset: 405935
+        } else {
+            ref = RE::Console::GetSelectedRef().get(); // AE offset: 504099
         }
 
-        RE::TESObjectREFR* ref = RE::Console::GetSelectedRef().get();
         if (ref) {
             if (ref->As<RE::Actor>()) {
                 ImGui::Text("Selected Ref: %08X - Actor {} (SPID unsupported)", ref->GetFormID(),
@@ -391,7 +386,7 @@ namespace MCP {
                 bool isSelected = (i == selectedFile);
                 if (ImGui::Selectable(swapFiles[i].c_str(), isSelected)) {
                     selectedFile = i;
-                    bosMgr->SetFile("Data//" + swapFiles[i]);  // update BOS file
+                    bosMgr->SetFile("Data//" + swapFiles[i]);
                 }
                 if (isSelected) {
                     ImGui::SetItemDefaultFocus();
