@@ -5,6 +5,10 @@
 #include "Utils.h"
 #include "BOS.h"
 #include "KID.h"
+#include "Translations.h"
+
+
+namespace TrStMCP = Translations::Strings::MCP;
 
 namespace MCP {
 
@@ -14,26 +18,23 @@ namespace MCP {
             return;
         }
         SKSEMenuFramework::SetSection("In-Game Patcher");
-        SKSEMenuFramework::AddSectionItem("Menu Patcher", RenderSettings);
-        SKSEMenuFramework::AddSectionItem("BOS File", RenderBOSFile);
-        SKSEMenuFramework::AddSectionItem("KID File", RenderKIDFile);
-        SKSEMenuFramework::AddSectionItem("Log", RenderLog);
+        SKSEMenuFramework::AddSectionItem(TrStMCP::menu_title, RenderSettings);
+        SKSEMenuFramework::AddSectionItem(TrStMCP::BOS_file, RenderBOSFile);
+        SKSEMenuFramework::AddSectionItem(TrStMCP::KID_file, RenderKIDFile);
+        SKSEMenuFramework::AddSectionItem(TrStMCP::log, RenderLog);
 
         logger::info("SKSE Menu Framework registered.");
     }
 
     void __stdcall RenderSettings() {
-        ImGui::SeparatorText("General Options");
-        if (ImGui::CollapsingHeader("General Options Help")) {
-            ImGui::BulletText("Show Editor Markers: toggles visibility of markers (idle, furniture, spawns, etc).");
-            ImGui::BulletText("     After changing, reload cells (fast travel recommended).");
-            ImGui::BulletText("Patching Mode: enables object interaction via SkyPrompt.");
-            ImGui::BulletText("     To patch: look directly at an object or select it in Console.");
-            ImGui::BulletText("     Console selection has priority over look-at.");
+        ImGui::SeparatorText(TrStMCP::general_options.c_str());
+        std::string HeaderText = TrStMCP::general_options + TrStMCP::help;
+        if (ImGui::CollapsingHeader(HeaderText.c_str())) {
+            ImGui::TextWrapped(TrStMCP::general_options_help_text.c_str());
         }
         ImGui::Separator();
 
-        ImGui::Checkbox("Patching Mode", &PatchingMode);
+        ImGui::Checkbox(TrStMCP::patching_mode.c_str(), &PatchingMode);
         
         RE::TESObjectREFR* ref = nullptr;
         
@@ -45,10 +46,12 @@ namespace MCP {
 
         if (ref) {
             if (ref->As<RE::Actor>()) {
-                ImGui::Text("Selected Ref: %08X - Actor {} (SPID unsupported)", ref->GetFormID(),
-                            ref->GetName());
+                std::string text = TrStMCP::selected_ref + ": %08X - " + TrStMCP::actor + " {} ";
+
+                ImGui::Text(text.c_str(), ref->GetFormID(), ref->GetName());
             } else {
-                ImGui::Text("Selected Ref: %08X", ref->GetFormID());
+                std::string text = TrStMCP::selected_ref + ": %08X";
+                ImGui::Text(text.c_str(), ref->GetFormID());
             }
             auto base = ref->GetBaseObject();
             if (base) {
@@ -72,10 +75,10 @@ namespace MCP {
                 isIndirectKIDSupported = false;  // disabling for now
 
                 if (isKIDSupported || isIndirectKIDSupported) {
-                    if (ImGui::CollapsingHeader("KID Support", ImGuiTreeNodeFlags_DefaultOpen)) {
-                        if (ImGui::CollapsingHeader("KID Support Help")) {
-                            ImGui::Text("Keywords can be patched onto this object's base form.");
-                            ImGui::Text("These edits are saved into the KID patch file whe Add Keyword is pressed.");
+                    if (ImGui::CollapsingHeader(TrStMCP::KID_support.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+                        std::string HeaderText = TrStMCP::KID_support + TrStMCP::help;
+                        if (ImGui::CollapsingHeader(HeaderText.c_str())) {
+                            ImGui::TextWrapped(TrStMCP::KID_support_help_text.c_str());
                         }
 
                         static char customKeywordBuf[128]{};
@@ -83,7 +86,7 @@ namespace MCP {
                         static char keywordFilter[128]{};
 
                         // Filter box
-                        ImGui::InputTextWithHint("Filter", "Type to filter keywords...", keywordFilter,
+                        ImGui::InputTextWithHint(TrStMCP::filter.c_str(), TrStMCP::filter_text.c_str(), keywordFilter,
                                                  sizeof(keywordFilter));
 
                         // Collect all game keywords once
@@ -98,10 +101,10 @@ namespace MCP {
                         }
 
                         // Dropdown with filter
-                        if (ImGui::BeginCombo("Game Keywords",
+                        if (ImGui::BeginCombo(TrStMCP::game_keywords.c_str(),
                                               (selectedKeyword >= 0 && selectedKeyword < (int)allKeywords.size())
                                                   ? allKeywords[selectedKeyword]->GetFormEditorID()
-                                                  : "None")) {
+                                                  : TrStMCP::none.c_str())) {
                             for (int i = 0; i < (int)allKeywords.size(); i++) {
                                 auto* kw = allKeywords[i];
                                 if (base->HasKeywordByEditorID(kw->GetFormEditorID())) {
@@ -126,11 +129,11 @@ namespace MCP {
                         }
 
                         // Custom keyword text field
-                        ImGui::InputText("Custom Keyword", customKeywordBuf, sizeof(customKeywordBuf));
+                        ImGui::InputText(TrStMCP::custom_keyword.c_str(), customKeywordBuf, sizeof(customKeywordBuf));
 
                         // Add button
                         if (isKIDSupported) {
-                            if (ImGui::Button("Add Keyword to Base Object")) {
+                            if (ImGui::Button(TrStMCP::add_keyword.c_str())) {
                                 if (selectedKeyword >= 0) {
                                     auto* kw = allKeywords[selectedKeyword];
                                     if (kw) {
@@ -154,12 +157,12 @@ namespace MCP {
                             // If weapon/armor selectable enchantments
                             auto indirectTargets = Utils::GetIndirectKIDTargets(ref);
                             if (!indirectTargets.empty()) {
-                                if (ImGui::CollapsingHeader("Indirect KID Targets")) {
+                                if (ImGui::CollapsingHeader(TrStMCP::indirect_KID.c_str())) {
                                     for (auto* target : indirectTargets) {
                                         const char* name = target ? target->GetName() : "<invalid>";
                                         ImGui::Text("%s", name ? name : "<unnamed>");
                                         ImGui::SameLine();
-                                        if (ImGui::Button("Add Keyword")) {
+                                        if (ImGui::Button(TrStMCP::add_keyword.c_str())) {
                                             if (selectedKeyword >= 0) {
                                                 auto* kw = allKeywords[selectedKeyword];
                                                 if (kw) {
@@ -181,24 +184,17 @@ namespace MCP {
                                 }
                             }
                         }
-
-                        ImGui::BulletText("Add Keyword to Base Object: attaches a new keyword to this base object.");
-                        ImGui::BulletText(
-                            "   Keywords are applied to the *base object*, so all references of this type inherit "
-                            "them.");
-                        //ImGui::BulletText("Add Keyword: attaches a new keyword to the selected object.");
                     }
                 }
             }
             if (Utils::IsDynamicForm(ref)) {
-                ImGui::Text("Selected Ref: %08X (Dynamic - BOS ignored)", ref->GetFormID());
+                std::string text = TrStMCP::selected_ref + ": %08X" + TrStMCP::BOS_ignored;
+                ImGui::Text(text.c_str(), ref->GetFormID());
             } else {
-                if (ImGui::CollapsingHeader("BOS Support", ImGuiTreeNodeFlags_DefaultOpen)) {
-                    if (ImGui::CollapsingHeader("BOS Support Help")) {
-                        ImGui::BulletText("Change object Position, Rotation, Scale or Disable it.");
-                        ImGui::BulletText(
-                            "These edits are saved into the BOS patch file when Save Transform is pressed.");
-                        ImGui::BulletText("Tip: You can resize this window for easier editing.");
+                if (ImGui::CollapsingHeader(TrStMCP::BOS_support.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+                    std::string headerText = TrStMCP::BOS_support + TrStMCP::help;
+                    if (ImGui::CollapsingHeader(headerText.c_str())) {
+                        ImGui::TextWrapped(TrStMCP::BOS_support_help_text.c_str());
                     }
 
                     auto BosMgr = BOSIniManager::GetSingleton();
@@ -230,7 +226,8 @@ namespace MCP {
                     ImVec4 color;
 
                     static float posStepValue = 10.0f;
-                    ImGui::Text("Position | Step: ");
+                    std::string posLabel = TrStMCP::position + " | " + TrStMCP::step + ": ";
+                    ImGui::Text(posLabel.c_str());
                     ImGui::SameLine();
                     ImGui::InputFloat("", &posStepValue, 1.0f, 10.0f, "%.3f");
 
@@ -254,7 +251,8 @@ namespace MCP {
                     ImGui::PopStyleColor();
 
                     static float rotStepValue = 0.1f;
-                    ImGui::Text("Rotation | Step: ");
+                    std::string rotLabel = TrStMCP::rotation + " | " + TrStMCP::step + ": ";
+                    ImGui::Text(rotLabel.c_str());
                     ImGui::SameLine();
                     ImGui::InputFloat("", &rotStepValue, 0.1f, 1.0f, "%.3f");
 
@@ -278,14 +276,12 @@ namespace MCP {
                     ImGui::PopStyleColor();
 
                     static float scaleStepValue = 0.1f;
-                    ImGui::Text("Scale | Step: ");
+                    std::string scaleLabel = TrStMCP::scale + " | " + TrStMCP::step + ": ";
+                    ImGui::Text(scaleLabel.c_str());
                     ImGui::SameLine();
                     ImGui::InputFloat("", &scaleStepValue, 0.1f, 1.0f, "%.3f");
 
                     color = (std::abs(scale - originalScale) < 0.001f) ? green : yellow;
-                    ImGui::Text("Current Scale: %.3f", scale);
-                    ImGui::Text("Original Scale: %.3f", originalScale);
-                    ImGui::Text("Difference: %.5f", scale - originalScale);
                     ImGui::PushStyleColor(ImGuiCol_FrameBg, color);
                     if (ImGui::InputFloat("##scale", &scale, scaleStepValue, scaleStepValue * 10)) {
                         changed = true;
@@ -304,43 +300,38 @@ namespace MCP {
                     // Action buttons
 
                     if (unsavedChanges) {
-                        ImGui::TextColored(yellow, "Unsaved Changes");
+                        ImGui::TextColored(yellow, TrStMCP::unsaved_changes.c_str());
                     }
-                    if (ImGui::Button("Save Transform")) {
+                    if (ImGui::Button(TrStMCP::save_transform.c_str())) {
                         unsavedChanges = false;
                         BosMgr->TransformObject(ref);
                     }
                     ImGui::SameLine();
-                    if (ImGui::Button("Remove Object")) {
+                    if (ImGui::Button(TrStMCP::remove_object.c_str())) {
                         unsavedChanges = false;
                         BosMgr->RemoveObject(ref);
                     }
                     ImGui::SameLine();
-                    if (ImGui::Button("Reset Transform")) {
+                    if (ImGui::Button(TrStMCP::reset_transform.c_str())) {
                         unsavedChanges = false;
                         BosMgr->ResetObject(ref);
                     }
 
-                    ImGui::BulletText(
-                        "Save Transform: save current object position and rotation into the BOS file.");
-                    ImGui::BulletText("Remove Object: hides this reference at runtime and marks it in BOS.");
-                    ImGui::BulletText(
-                        "Reset Transform: restores the object to its original state, remove BOS edits.");
+                    ImGui::BulletText(TrStMCP::save_BOS_text.c_str());
+                    ImGui::BulletText(TrStMCP::remove_BOS_text.c_str());
+                    ImGui::BulletText(TrStMCP::reset_transform.c_str());
                 }
             }
         } else {
-            ImGui::Text("No Ref Selected");
+            ImGui::Text(TrStMCP::no_selected_ref.c_str());
         }
     }
 
     void __stdcall RenderBOSFile() {
-        ImGui::SeparatorText("BOS Runtime Editor");
-        if (ImGui::CollapsingHeader("BOS Runtime Editor Help")) {
-            ImGui::BulletText("Only this session-added changes are shown here.");
-            ImGui::BulletText("Saving will append new entries into your BOS-SWAP file.");
-            ImGui::BulletText("Existing data in the file will remain unchanged.");
-            ImGui::BulletText("This tool does not overwrite or remove original entries.");
-            ImGui::BulletText("Always keep a backup of your BOS-SWAP files before editing.");
+        ImGui::SeparatorText(TrStMCP::BOS_editor.c_str());
+        std::string headerText = TrStMCP::BOS_editor + TrStMCP::help;
+        if (ImGui::CollapsingHeader(headerText.c_str())) {
+            ImGui::TextWrapped(TrStMCP::BOS_editor_help_text.c_str());
         }
         ImGui::Separator();
 
@@ -350,7 +341,8 @@ namespace MCP {
         if (currentFile.starts_with("Data//") || currentFile.starts_with("Data\\")) {
             currentFile = currentFile.substr(5);
         }
-        ImGui::Text("Current BOS File: %s", currentFile.c_str());
+        std::string fileText = TrStMCP::current_file + currentFile;
+        ImGui::Text(fileText.c_str());
 
         // Collect all *_SWAP.ini files in Data folder (once)
         static std::vector<std::string> swapFiles;
@@ -363,7 +355,8 @@ namespace MCP {
             for (const auto& entry : std::filesystem::directory_iterator("Data")) {
                 if (entry.is_regular_file()) {
                     auto path = entry.path();
-                    auto name = path.filename().string();
+                    auto u8name = path.filename().u8string();
+                    std::string name(u8name.begin(), u8name.end());
                     if (name.size() > 9 && name.ends_with("_SWAP.ini")) {
                         swapFiles.push_back(name);
                     }
@@ -381,7 +374,8 @@ namespace MCP {
             }
         }
 
-        if (ImGui::BeginCombo("Select BOS File", selectedFile >= 0 ? swapFiles[selectedFile].c_str() : "<None>")) {
+        if (ImGui::BeginCombo(TrStMCP::select_file.c_str(),
+                              selectedFile >= 0 ? swapFiles[selectedFile].c_str() : TrStMCP::none.c_str())) {
             for (int i = 0; i < (int)swapFiles.size(); i++) {
                 bool isSelected = (i == selectedFile);
                 if (ImGui::Selectable(swapFiles[i].c_str(), isSelected)) {
@@ -399,15 +393,16 @@ namespace MCP {
         static char newFileBuf[128]{};
 
         if (!creatingNewFile) {
-            if (ImGui::Button("New File")) {
+            if (ImGui::Button(TrStMCP::create_new_file.c_str())) {
                 creatingNewFile = true;
                 newFileBuf[0] = '\0';
             }
         } else {
-            ImGui::Text("Enter new file name (without _SWAP.ini):");
-            ImGui::InputText("New File Name", newFileBuf, sizeof(newFileBuf));
+            std::string headerText = TrStMCP::enter_file_name + " _SWAP.ini):";
+            ImGui::Text(headerText.c_str());
+            ImGui::InputText(TrStMCP::new_file_name.c_str(), newFileBuf, sizeof(newFileBuf));
             ImGui::SameLine();
-            if (ImGui::Button("Create")) {
+            if (ImGui::Button(TrStMCP::create.c_str())) {
                 if (std::strlen(newFileBuf) > 0) {
                     std::string newFileName = std::string(newFileBuf) + "_SWAP.ini";
                     std::string fullPath = "Data//" + newFileName;
@@ -421,12 +416,12 @@ namespace MCP {
                 }
             }
             ImGui::SameLine();
-            if (ImGui::Button("Cancel")) {
+            if (ImGui::Button(TrStMCP::cancel.c_str())) {
                 creatingNewFile = false;
             }
         }
 
-        if (ImGui::CollapsingHeader("Removed Objects")) {
+        if (ImGui::CollapsingHeader(TrStMCP::removed_objects.c_str())) {
             int idx = 0;
             for (auto it = bosMgr->newReferences.begin(); it != bosMgr->newReferences.end();) {
                 ImGui::PushID(idx);
@@ -434,12 +429,12 @@ namespace MCP {
                 ImGui::Text("RefID: %s", it->second.origRefID.c_str());
                 auto ref = Utils::GetFormFromString(it->second.origRefID.c_str());
                 if (ref) {
-                    ImGui::Text("Object: %s", ref->GetFormEditorID());
+                    ImGui::Text("EditID: %s", ref->AsReference()->GetBaseObject()->GetFormEditorID());
                 }
 
                 OverridesData overrides = Utils::ParseOverrides(it->second.propertyOverrides);
 
-                if (ImGui::Button("Revert")) {
+                if (ImGui::Button(TrStMCP::revert.c_str())) {
                     if (ref) {
                         bosMgr->ResetObject(ref->AsReference());
                     }
@@ -452,10 +447,10 @@ namespace MCP {
                 ++idx;
                 ++it;
             }
-            ImGui::BulletText("Revert: re-enable object, restores the object to its original state, remove BOS edits.");
+            ImGui::BulletText(TrStMCP::revert_BOS_text.c_str());
         }
 
-        if (ImGui::CollapsingHeader("Transformed Objects")) {
+        if (ImGui::CollapsingHeader(TrStMCP::transformed_objects.c_str())) {
             int idx = 0;
             for (auto it = bosMgr->newTransforms.begin(); it != bosMgr->newTransforms.end();) {
                 ImGui::PushID(idx);
@@ -463,13 +458,13 @@ namespace MCP {
                 ImGui::Text("RefID: %s", it->second.origRefID.c_str());
                 auto ref = Utils::GetFormFromString(it->second.origRefID.c_str())->AsReference();
                 if (ref) {
-                    ImGui::Text("Object: %s", ref->GetFormEditorID());
+                    ImGui::Text("EditID: %s", ref->AsReference()->GetBaseObject()->GetFormEditorID());
                 }
 
                 OverridesData overrides = Utils::ParseOverrides(it->second.propertyOverrides);
                 bool changed = false;
 
-                if (ImGui::CollapsingHeader("Transform")) {
+                if (ImGui::CollapsingHeader(TrStMCP::transform.c_str())) {
                     RE::NiPoint3 originalPos = {0, 0, 0};
                     RE::NiPoint3 originalRot = {0, 0, 0};
                     float originalScale = 0;
@@ -493,7 +488,8 @@ namespace MCP {
                         overrides.pos[2] = originalPos.z;
                     }
                     static float posStepValue = 10.0f;
-                    ImGui::Text("Position | Step:");
+                    std::string posLabel = TrStMCP::position + " | " + TrStMCP::step + ": ";
+                    ImGui::Text(posLabel.c_str());
                     ImGui::SameLine();
                     ImGui::InputFloat("", &posStepValue, 1.0f, 10.0f, "%.3f");
 
@@ -523,7 +519,8 @@ namespace MCP {
                         overrides.rot[2] = originalRot.z;
                     }
                     static float rotStepValue = 0.1f;
-                    ImGui::Text("Rotation | Step:");
+                    std::string rotLabel = TrStMCP::rotation + " | " + TrStMCP::step + ": ";
+                    ImGui::Text(rotLabel.c_str());
                     ImGui::SameLine();
                     ImGui::InputFloat("", &rotStepValue, 0.1f, 1.0f, "%.3f");
                     color = (std::abs(overrides.rot[0] - originalRot.x) < 0.001f) ? green : yellow;
@@ -550,7 +547,8 @@ namespace MCP {
                         overrides.scale = originalScale;
                     }
                     static float scaleStepValue = 0.1f;
-                    ImGui::Text("Scale | Step:");
+                    std::string scaleLabel = TrStMCP::scale + " | " + TrStMCP::step + ": ";
+                    ImGui::Text(scaleLabel.c_str());
                     ImGui::SameLine();
                     ImGui::InputFloat("", &scaleStepValue, 0.1f, 1.0f, "%.3f");
                     color = (std::abs(overrides.scale - originalScale) < 0.001f) ? green : yellow;
@@ -575,13 +573,13 @@ namespace MCP {
                     bosMgr->Save();
                 }
 
-                if (ImGui::Button("Reset Transform")) {
+                if (ImGui::Button(TrStMCP::reset_transform.c_str())) {
                     bosMgr->ResetObject(ref);
                     ImGui::PopID();
                     break;
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Remove Object")) {
+                if (ImGui::Button(TrStMCP::remove_object.c_str())) {
                     bosMgr->ResetObject(ref);  // first reset to original position
                     bosMgr->RemoveObject(ref);
                     ImGui::PopID();
@@ -593,19 +591,17 @@ namespace MCP {
                 ++idx;
                 ++it;
             }
-            ImGui::BulletText("Remove Object: hides this reference at runtime and marks it in BOS.");
-            ImGui::BulletText("Reset Transform: restores the object to its original state, removing BOS edits.");
+            ImGui::BulletText(TrStMCP::auto_save_text.c_str());
+            ImGui::BulletText(TrStMCP::remove_BOS_text.c_str());
+            ImGui::BulletText(TrStMCP::reset_transform.c_str());
         }
     }
 
     void __stdcall RenderKIDFile() {
-        ImGui::SeparatorText("KID Runtime Editor");
-        if (ImGui::CollapsingHeader("KID Runtime Editor Help")) {
-            ImGui::BulletText("Only this session-added keywords are shown here.");
-            ImGui::BulletText("Saving will append new entries into your KID file.");
-            ImGui::BulletText("Existing data in the file will remain unchanged.");
-            ImGui::BulletText("This tool does not overwrite or remove original entries.");
-            ImGui::BulletText("Always keep a backup of your KID files before editing.");
+        ImGui::SeparatorText(TrStMCP::KID_editor.c_str());
+        std::string headerText = TrStMCP::KID_editor + TrStMCP::help;
+        if (ImGui::CollapsingHeader(headerText.c_str())) {
+            ImGui::TextWrapped(TrStMCP::KID_editor_text.c_str());
         }
         ImGui::Separator();
 
@@ -615,7 +611,8 @@ namespace MCP {
         if (currentFile.starts_with("Data//") || currentFile.starts_with("Data\\")) {
             currentFile = currentFile.substr(5);
         }
-        ImGui::Text("Current KID File: %s", currentFile.c_str());
+        std::string fileText = TrStMCP::current_file + currentFile;
+        ImGui::Text(fileText.c_str());
 
         // Collect all *_KID.ini files in Data folder (once)
         static std::vector<std::string> kidFiles;
@@ -628,7 +625,8 @@ namespace MCP {
             for (const auto& entry : std::filesystem::directory_iterator("Data")) {
                 if (entry.is_regular_file()) {
                     auto path = entry.path();
-                    auto name = path.filename().string();
+                    auto u8name = path.filename().u8string();
+                    std::string name(u8name.begin(), u8name.end());
                     if (name.size() > 8 && name.ends_with("_KID.ini")) {
                         kidFiles.push_back(name);
                     }
@@ -646,7 +644,8 @@ namespace MCP {
             }
         }
 
-        if (ImGui::BeginCombo("Select KID File", selectedFile >= 0 ? kidFiles[selectedFile].c_str() : "<None>")) {
+        if (ImGui::BeginCombo(TrStMCP::select_file.c_str(),
+                              selectedFile >= 0 ? kidFiles[selectedFile].c_str() : TrStMCP::none.c_str())) {
             for (int i = 0; i < (int)kidFiles.size(); i++) {
                 bool isSelected = (i == selectedFile);
                 if (ImGui::Selectable(kidFiles[i].c_str(), isSelected)) {
@@ -665,15 +664,16 @@ namespace MCP {
         static char newFileBuf[128]{};
 
         if (!creatingNewFile) {
-            if (ImGui::Button("New File")) {
+            if (ImGui::Button(TrStMCP::create_new_file.c_str())) {
                 creatingNewFile = true;
                 newFileBuf[0] = '\0';
             }
         } else {
-            ImGui::Text("Enter new file name (without _KID.ini):");
-            ImGui::InputText("New File Name", newFileBuf, sizeof(newFileBuf));
+            std::string headerText = TrStMCP::enter_file_name + " _KID.ini):";
+            ImGui::Text(headerText.c_str());
+            ImGui::InputText(TrStMCP::new_file_name.c_str(), newFileBuf, sizeof(newFileBuf));
             ImGui::SameLine();
-            if (ImGui::Button("Create")) {
+            if (ImGui::Button(TrStMCP::create.c_str())) {
                 if (std::strlen(newFileBuf) > 0) {
                     std::string newFileName = std::string(newFileBuf) + "_KID.ini";
                     std::string fullPath = "Data//" + newFileName;
@@ -687,13 +687,13 @@ namespace MCP {
                 }
             }
             ImGui::SameLine();
-            if (ImGui::Button("Cancel")) {
+            if (ImGui::Button(TrStMCP::cancel.c_str())) {
                 creatingNewFile = false;
             }
         }
 
         // Entries list
-        if (ImGui::CollapsingHeader("KID Entries")) {
+        if (ImGui::CollapsingHeader(TrStMCP::KID_entries.c_str())) {
             int idx = 0;
             auto entries = kidMgr->GetEntries();
             for (auto it = entries.begin(); it != entries.end();) {
@@ -702,7 +702,7 @@ namespace MCP {
                 ImGui::Text("FormID: %s", it->objectID.c_str());
                 ImGui::Text("Keyword: %s", it->keyword.c_str());
 
-                if (ImGui::Button("Remove")) {
+                if (ImGui::Button(TrStMCP::remove.c_str())) {
                     if (auto form = Utils::GetFormFromString(it->objectID)) {
                         if (auto base = form->As<RE::BGSKeywordForm>()) {
                             if (auto keyword = RE::TESForm::LookupByEditorID(it->keyword)) {
@@ -724,7 +724,7 @@ namespace MCP {
                 ++idx;
                 ++it;
             }
-            ImGui::BulletText("Remove: remove keyword from base object, remove KID edits.");
+            ImGui::BulletText(TrStMCP::remove_KID_text.c_str());
         }
     }
 }

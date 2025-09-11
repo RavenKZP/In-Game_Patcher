@@ -13,4 +13,5 @@ set(headers ${headers}
 	include/BOS.h
 	include/SPID.h
 	include/KID.h
+	include/Translations.h
 )

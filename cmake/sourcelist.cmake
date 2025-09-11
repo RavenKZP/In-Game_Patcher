@@ -12,4 +12,5 @@ set(sources ${sources}
 	src/BOS.cpp
 	src/SPID.cpp
 	src/KID.cpp
+	src/Translations.cpp
 )

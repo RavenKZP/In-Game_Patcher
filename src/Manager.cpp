@@ -2,6 +2,9 @@
 #include "Events.h"
 #include "Utils.h"
 #include "BOS.h"
+#include "Translations.h"
+
+namespace TrStSkPr = Translations::Strings::SkyPrompt;
 
 void PatcherPromptSink::RegisterSkyPrompt() { 
     clientID = SkyPromptAPI::RequestClientID();
@@ -58,6 +61,7 @@ void PatcherPromptSink::ProcessEvent(SkyPromptAPI::PromptEvent event) const {
                 SkyPromptAPI::RemovePrompt(PatcherPromptSink::GetSingleton(), clientID);
                 if (dragginObj) {
                     BOSIniManager::GetSingleton()->TransformObject(dragginObj);
+                    logger::info("Stoped dragging object: {}", dragginObj->GetName());
                 }
                 dragginObj = nullptr;
                 dragging = false;
@@ -111,20 +115,20 @@ void PatcherPromptSink::ProcessEvent(SkyPromptAPI::PromptEvent event) const {
 
 void PatcherPromptSink::SetRef(RE::TESObjectREFR* ref) {
     auto formID = ref->GetFormID();
-    PatcherPrompts = {SkyPromptAPI::Prompt("Move Object", 1, 1, SkyPromptAPI::PromptType::kHold, formID),
-                      SkyPromptAPI::Prompt("Remove Object", 2, 2, SkyPromptAPI::PromptType::kHold, formID),
-                      SkyPromptAPI::Prompt("Save Position", 3, 3, SkyPromptAPI::PromptType::kHold, formID),
-                      SkyPromptAPI::Prompt("Reset Position", 4, 4, SkyPromptAPI::PromptType::kHold, formID)};
+    PatcherPrompts = {SkyPromptAPI::Prompt(TrStSkPr::move, 1, 1, SkyPromptAPI::PromptType::kHold, formID),
+                      SkyPromptAPI::Prompt(TrStSkPr::remove, 2, 2, SkyPromptAPI::PromptType::kHold, formID),
+                      SkyPromptAPI::Prompt(TrStSkPr::save, 3, 3, SkyPromptAPI::PromptType::kHold, formID),
+                      SkyPromptAPI::Prompt(TrStSkPr::reset, 4, 4, SkyPromptAPI::PromptType::kHold, formID)};
 }
 
 void PatcherPromptSink::InitPrompts() {
-    EnterPrompt = {SkyPromptAPI::Prompt("Enter Patch Mode", 1, 4, SkyPromptAPI::PromptType::kHold)};
-    ExitPrompt = {SkyPromptAPI::Prompt("Exit Patch Mode", 1, 5, SkyPromptAPI::PromptType::kHold)};
+    EnterPrompt = {SkyPromptAPI::Prompt(TrStSkPr::enter, 1, 4, SkyPromptAPI::PromptType::kHold)};
+    ExitPrompt = {SkyPromptAPI::Prompt(TrStSkPr::exit, 1, 5, SkyPromptAPI::PromptType::kHold)};
 
-    PatcherPrompts = {SkyPromptAPI::Prompt("Move Object", 1, 1, SkyPromptAPI::PromptType::kHold),
-                      SkyPromptAPI::Prompt("Remove Object", 2, 2, SkyPromptAPI::PromptType::kHold),
-                      SkyPromptAPI::Prompt("Save Position", 3, 3, SkyPromptAPI::PromptType::kHold),
-                      SkyPromptAPI::Prompt("Reset Position", 4, 4, SkyPromptAPI::PromptType::kHold)};
+    PatcherPrompts = {SkyPromptAPI::Prompt(TrStSkPr::move,1, 1, SkyPromptAPI::PromptType::kHold),
+                      SkyPromptAPI::Prompt(TrStSkPr::remove, 2, 2, SkyPromptAPI::PromptType::kHold),
+                      SkyPromptAPI::Prompt(TrStSkPr::save, 3, 3, SkyPromptAPI::PromptType::kHold),
+                      SkyPromptAPI::Prompt(TrStSkPr::reset, 4, 4, SkyPromptAPI::PromptType::kHold)};
 
     
     static const std::array<std::pair<RE::INPUT_DEVICE, SkyPromptAPI::ButtonID>, 1> cancel_button_key{
@@ -138,17 +142,17 @@ void PatcherPromptSink::InitPrompts() {
     static const std::array<std::pair<RE::INPUT_DEVICE, SkyPromptAPI::ButtonID>, 1> space_button_key{
         {{RE::INPUT_DEVICE::kKeyboard, 0x39}}};
 
-    HintPrompts = {
-        SkyPromptAPI::Prompt("Accept", 1, 6, SkyPromptAPI::PromptType::kHint, 0, accept_button_key),
-        SkyPromptAPI::Prompt("Cancel", 2, 6, SkyPromptAPI::PromptType::kHint, 0, cancel_button_key),
-        SkyPromptAPI::Prompt("Z Rotate", 3, 6, SkyPromptAPI::PromptType::kHint, 0, ctrl_button_key),
-        SkyPromptAPI::Prompt("Z Move", 4, 6, SkyPromptAPI::PromptType::kHint, 0, shift_button_key),
-        SkyPromptAPI::Prompt("Basic", 5, 6, SkyPromptAPI::PromptType::kHint, 0, space_button_key)};
+    HintPrompts = {SkyPromptAPI::Prompt(TrStSkPr::accept, 1, 6, SkyPromptAPI::PromptType::kHint, 0, accept_button_key),
+                   SkyPromptAPI::Prompt(TrStSkPr::cancel, 2, 6, SkyPromptAPI::PromptType::kHint, 0, cancel_button_key),
+                   SkyPromptAPI::Prompt(TrStSkPr::zrotate, 3, 6, SkyPromptAPI::PromptType::kHint, 0, ctrl_button_key),
+                   SkyPromptAPI::Prompt(TrStSkPr::zmove, 4, 6, SkyPromptAPI::PromptType::kHint, 0, shift_button_key),
+                   SkyPromptAPI::Prompt(TrStSkPr::basic, 5, 6, SkyPromptAPI::PromptType::kHint, 0, space_button_key)};
 
-    AdvancedHintPrompts = {SkyPromptAPI::Prompt("Accept", 1, 6, SkyPromptAPI::PromptType::kHint, 0, accept_button_key),
-                           SkyPromptAPI::Prompt("Cancel", 2, 6, SkyPromptAPI::PromptType::kHint, 0, cancel_button_key),
-                           SkyPromptAPI::Prompt("XYZ Rotate", 3, 6, SkyPromptAPI::PromptType::kHint, 0, ctrl_button_key),
-                           SkyPromptAPI::Prompt("XYZ Move", 4, 6, SkyPromptAPI::PromptType::kHint, 0, shift_button_key),
-                           SkyPromptAPI::Prompt("Advanced", 5, 6, SkyPromptAPI::PromptType::kHint, 0, space_button_key)};
+    AdvancedHintPrompts = {
+        SkyPromptAPI::Prompt(TrStSkPr::accept, 1, 6, SkyPromptAPI::PromptType::kHint, 0, accept_button_key),
+        SkyPromptAPI::Prompt(TrStSkPr::cancel, 2, 6, SkyPromptAPI::PromptType::kHint, 0, cancel_button_key),
+        SkyPromptAPI::Prompt(TrStSkPr::xyzrotate, 3, 6, SkyPromptAPI::PromptType::kHint, 0, ctrl_button_key),
+        SkyPromptAPI::Prompt(TrStSkPr::xyzmove, 4, 6, SkyPromptAPI::PromptType::kHint, 0, shift_button_key),
+        SkyPromptAPI::Prompt(TrStSkPr::advanced, 5, 6, SkyPromptAPI::PromptType::kHint, 0, space_button_key)};
     
 }

@@ -123,7 +123,7 @@ namespace Utils {
         if (!dataHandler) return nullptr;
 
         if (modIndex == 0xFE) {
-            uint8_t eslIndex = (formID >> 12) & 0xFFF;
+            uint16_t eslIndex = (formID >> 12) & 0xFFF;
             return dataHandler->LookupLoadedLightModByIndex(eslIndex);
         }
 

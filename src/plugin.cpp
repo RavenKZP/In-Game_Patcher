@@ -4,6 +4,7 @@
 #include "Hooks.h"
 #include "MCP.h"
 #include "Utils.h"
+#include "Translations.h"
 
 void OnMessage(SKSE::MessagingInterface::Message* message) {
     if (message->type == SKSE::MessagingInterface::kDataLoaded) {
@@ -11,6 +12,9 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
         //This will create new files only if missing
         Utils::CreateNewBOSFile("Data\\InGamePatcher_SWAP.ini");
         Utils::CreateNewKIDFile("Data\\InGamePatcher_KID.ini");
+
+        const auto lang = Translations::GetValidLanguage();
+        Translations::LoadTranslations(lang);
 
         Hooks::Install();
         EventSinks::Install();
