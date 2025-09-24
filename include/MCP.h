@@ -8,6 +8,7 @@ namespace MCP {
     void __stdcall RenderSettings();
     void __stdcall RenderLog();
     void __stdcall RenderBOSFile();
+    void __stdcall RenderdBOSResolver(); 
     void __stdcall RenderKIDFile();
 
     inline std::vector<std::string> logLines;

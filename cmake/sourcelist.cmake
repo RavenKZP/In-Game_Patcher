@@ -10,6 +10,7 @@ set(sources ${sources}
 	src/Raycast.cpp
 	src/RayCollector.cpp
 	src/BOS.cpp
+	src/BOSConflictResolver.cpp
 	src/SPID.cpp
 	src/KID.cpp
 	src/Translations.cpp

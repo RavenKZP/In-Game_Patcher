@@ -6,7 +6,7 @@
 
 class PatcherPromptSink : public clib_util::singleton::ISingleton<PatcherPromptSink>, public SkyPromptAPI::PromptSink {
 public:
-    void RegisterSkyPrompt();
+    void RegisterSkyPrompt(std::string lang);
     std::span<const SkyPromptAPI::Prompt> GetPrompts() const override;
     void ProcessEvent(SkyPromptAPI::PromptEvent event) const override;
 

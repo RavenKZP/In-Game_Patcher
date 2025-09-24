@@ -15,12 +15,17 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
 
         const auto lang = Translations::GetValidLanguage();
         Translations::LoadTranslations(lang);
-
+        if (REX::W32::GetModuleHandle(L"ObjectManipulationOverhaul")) {
+            OMO_installed = true;
+            Utils::LoadKeyConfig("Data\\Object Manipulation Overhaul\\KeyConfiguration.txt");
+        } else {
+            logger::info("Object Manipulation Overhaul is not installed");
+        }
         Hooks::Install();
         EventSinks::Install();
         MCP::Register();
         auto PatcherPrompt = PatcherPromptSink::GetSingleton();
-        PatcherPrompt->RegisterSkyPrompt();
+        PatcherPrompt->RegisterSkyPrompt(lang);
         PatcherPrompt->InitPrompts();
     }
     if (message->type == SKSE::MessagingInterface::kNewGame || message->type == SKSE::MessagingInterface::kPostLoadGame) {

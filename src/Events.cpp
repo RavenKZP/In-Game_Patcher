@@ -17,11 +17,15 @@ RE::BSEventNotifyControl MenuEventSink::ProcessEvent(const RE::MenuOpenCloseEven
         SkyPromptAPI::RemovePrompt(patcherPrompt, patcherPrompt->clientID);
         if (a_event->opening) {
             patcherPrompt->console = true;
-            SkyPromptAPI::SendPrompt(patcherPrompt, patcherPrompt->clientID);
+            if (!SkyPromptAPI::SendPrompt(patcherPrompt, patcherPrompt->clientID)) {
+                logger::error("Failed to send prompt to SkyPrompt from Console open event");
+            }
         } else {
             patcherPrompt->console = false;
             if (PatchingMode) {
-                SkyPromptAPI::SendPrompt(patcherPrompt, patcherPrompt->clientID);
+                if (!SkyPromptAPI::SendPrompt(patcherPrompt, patcherPrompt->clientID)) {
+                    logger::error("Failed to send prompt to SkyPrompt from Console close event");
+                }
             }
         }
     }

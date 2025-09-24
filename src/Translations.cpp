@@ -46,7 +46,9 @@ bool Translations::LoadTranslations(const std::string& lang) {
     const std::filesystem::path path = std::filesystem::path(translations_folder) / ("In-Game_Patcher_" + lang + ".json");
 
     if (!exists(path)) {
-        logger::warn("Translation file {} does not exist.", path.string());
+        if (lang != "ENGLISH") {
+            logger::warn("Translation file {} does not exist.", path.string());
+        }
         return false;
     }
 

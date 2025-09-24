@@ -11,6 +11,7 @@ set(headers ${headers}
 	include/Raycast.h
 	include/RayCollector.h
 	include/BOS.h
+	include/BOSConflictResolver.h
 	include/SPID.h
 	include/KID.h
 	include/Translations.h

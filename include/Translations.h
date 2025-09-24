@@ -4,6 +4,10 @@
 
 namespace Translations {
     namespace Strings {
+
+        namespace Font {
+            inline std::string font_name = "NotoSans - Regular";
+        }
         namespace SkyPrompt {
             inline std::string move = "Move Object";
             inline std::string remove = "Remove Object";
@@ -25,6 +29,7 @@ namespace Translations {
         namespace MCP {
             inline std::string menu_title = "Menu Patcher";
             inline std::string BOS_file = "BOS File";
+            inline std::string BOS_resolver = "BOS Conflict Resolver";
             inline std::string KID_file = "KID File";
             inline std::string log = "Log";
             inline std::string help = "Help";

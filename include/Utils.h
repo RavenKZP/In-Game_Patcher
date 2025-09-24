@@ -1,6 +1,14 @@
 #pragma once
 
+#include "SkyPrompt/API.hpp"
+
 inline REL::Version Version;
+inline bool OMO_installed = false;
+inline bool PatchingMode = false;
+
+using KeyBinding = std::pair<RE::INPUT_DEVICE, SkyPromptAPI::ButtonID>;
+using ActionMap = std::unordered_map<std::string, std::vector<KeyBinding>>;
+inline ActionMap OMO_action_bindings;
 
 struct OverridesData {
     bool hasPos = false;
@@ -22,7 +30,6 @@ struct BOSOriginalData {
 
 struct BOSReference {
     std::string origRefID;
-    std::string swapBaseID;
     std::string propertyOverrides;
 };
 
@@ -41,8 +48,10 @@ namespace ObjectManipulationOverhaul {
     inline void StartDraggingObject(RE::TESObjectREFR* ref) {
         using func_t = void (*)(RE::TESObjectREFR*);
         static auto ObjectManipulationOverhaul = GetModuleHandle(L"ObjectManipulationOverhaul");
-        func_t func = reinterpret_cast<func_t>(GetProcAddress(ObjectManipulationOverhaul, "StartDraggingObject"));
-        return func(ref);
+        if (ObjectManipulationOverhaul) {
+            func_t func = reinterpret_cast<func_t>(GetProcAddress(ObjectManipulationOverhaul, "StartDraggingObject"));
+            return func(ref);
+        }
     }
 }
 
@@ -65,4 +74,8 @@ namespace Utils {
     bool CreateNewKIDFile(const std::string& filePath);
 
     std::vector<RE::TESForm*> GetIndirectKIDTargets(RE::TESObjectREFR* ref);
+
+    bool IsPluginLoaded(const std::string& pluginName);
+
+    void LoadKeyConfig(const std::string& filePath);
 }

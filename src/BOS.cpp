@@ -37,9 +37,8 @@ bool BOSIniManager::Save() const {
             inTransforms = false;
             out << line << "\n";
 
-            // Write our references immediately after section header
             for (auto& [id, r] : newReferences) {
-                out << r.origRefID << "|" << r.swapBaseID << "|" << r.propertyOverrides << "\n";
+                out << r.origRefID << "|" << r.propertyOverrides << "\n";
             }
             refsWritten = true;
             continue;
@@ -50,7 +49,6 @@ bool BOSIniManager::Save() const {
             inTransforms = true;
             out << line << "\n";
 
-            // Write our transforms immediately after section header
             for (auto& [id, t] : newTransforms) {
                 out << t.origRefID << "|" << t.propertyOverrides << "\n";
             }
@@ -86,7 +84,7 @@ bool BOSIniManager::Save() const {
     if (!refsWritten && !newReferences.empty()) {
         out << "\n[References]\n";
         for (auto& [id, r] : newReferences) {
-            out << r.origRefID << "|" << r.swapBaseID << "|" << r.propertyOverrides << "\n";
+            out << r.origRefID << "|" << r.propertyOverrides << "\n";
         }
     }
     if (!transWritten && !newTransforms.empty()) {
@@ -192,11 +190,7 @@ void BOSIniManager::RemoveTransform(RE::TESForm* ref) {
 void BOSIniManager::RemoveObject(RE::TESObjectREFR* ref) {
      BOSReference referenceToDisable;
      referenceToDisable.origRefID = Utils::NormalizeFormID(ref);
-     referenceToDisable.swapBaseID = "0x3B~Skyrim.esm";
-     std::string PositionX = std::to_string(ref->GetPositionX());
-     std::string PositionY = std::to_string(ref->GetPositionY());
-     std::string PositionZ = "-30000.0";
-     referenceToDisable.propertyOverrides = "posA(" + PositionX + "," + PositionY + "," + PositionZ + ")";
+     referenceToDisable.propertyOverrides = "flags(0x00000800)";
      RemoveTransform(ref);
      AddReference(referenceToDisable);
      ref->Disable();

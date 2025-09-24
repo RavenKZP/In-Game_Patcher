@@ -4,6 +4,7 @@
 #include "Events.h"
 #include "Utils.h"
 #include "BOS.h"
+#include "BOSConflictResolver.h"
 #include "KID.h"
 #include "Translations.h"
 
@@ -20,6 +21,7 @@ namespace MCP {
         SKSEMenuFramework::SetSection("In-Game Patcher");
         SKSEMenuFramework::AddSectionItem(TrStMCP::menu_title, RenderSettings);
         SKSEMenuFramework::AddSectionItem(TrStMCP::BOS_file, RenderBOSFile);
+        SKSEMenuFramework::AddSectionItem(TrStMCP::BOS_resolver, RenderdBOSResolver);
         SKSEMenuFramework::AddSectionItem(TrStMCP::KID_file, RenderKIDFile);
         SKSEMenuFramework::AddSectionItem(TrStMCP::log, RenderLog);
 
@@ -27,8 +29,9 @@ namespace MCP {
     }
 
     void __stdcall RenderSettings() {
+
         ImGui::SeparatorText(TrStMCP::general_options.c_str());
-        std::string HeaderText = TrStMCP::general_options + TrStMCP::help;
+        std::string HeaderText = TrStMCP::general_options + " " + TrStMCP::help;
         if (ImGui::CollapsingHeader(HeaderText.c_str())) {
             ImGui::TextWrapped(TrStMCP::general_options_help_text.c_str());
         }
@@ -38,7 +41,7 @@ namespace MCP {
         
         RE::TESObjectREFR* ref = nullptr;
         
-        if (Version <= REL::Version(1, 6, 640)) {
+        if (Version.compare(REL::Version(1, 6, 1130)) == std::strong_ordering::less){
             ref = RE::Console::GetSelectedRef640().get();  // AE offset: 405935
         } else {
             ref = RE::Console::GetSelectedRef().get(); // AE offset: 504099
@@ -76,7 +79,7 @@ namespace MCP {
 
                 if (isKIDSupported || isIndirectKIDSupported) {
                     if (ImGui::CollapsingHeader(TrStMCP::KID_support.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-                        std::string HeaderText = TrStMCP::KID_support + TrStMCP::help;
+                        HeaderText = TrStMCP::KID_support + " " + TrStMCP::help;
                         if (ImGui::CollapsingHeader(HeaderText.c_str())) {
                             ImGui::TextWrapped(TrStMCP::KID_support_help_text.c_str());
                         }
@@ -192,7 +195,7 @@ namespace MCP {
                 ImGui::Text(text.c_str(), ref->GetFormID());
             } else {
                 if (ImGui::CollapsingHeader(TrStMCP::BOS_support.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-                    std::string headerText = TrStMCP::BOS_support + TrStMCP::help;
+                    std::string headerText = TrStMCP::BOS_support + " " + TrStMCP::help;
                     if (ImGui::CollapsingHeader(headerText.c_str())) {
                         ImGui::TextWrapped(TrStMCP::BOS_support_help_text.c_str());
                     }
@@ -328,8 +331,9 @@ namespace MCP {
     }
 
     void __stdcall RenderBOSFile() {
+
         ImGui::SeparatorText(TrStMCP::BOS_editor.c_str());
-        std::string headerText = TrStMCP::BOS_editor + TrStMCP::help;
+        std::string headerText = TrStMCP::BOS_editor + " " + TrStMCP::help;
         if (ImGui::CollapsingHeader(headerText.c_str())) {
             ImGui::TextWrapped(TrStMCP::BOS_editor_help_text.c_str());
         }
@@ -398,7 +402,7 @@ namespace MCP {
                 newFileBuf[0] = '\0';
             }
         } else {
-            std::string headerText = TrStMCP::enter_file_name + " _SWAP.ini):";
+            headerText = TrStMCP::enter_file_name + " _SWAP.ini):";
             ImGui::Text(headerText.c_str());
             ImGui::InputText(TrStMCP::new_file_name.c_str(), newFileBuf, sizeof(newFileBuf));
             ImGui::SameLine();
@@ -596,10 +600,70 @@ namespace MCP {
             ImGui::BulletText(TrStMCP::reset_transform.c_str());
         }
     }
+    
+    void __stdcall RenderdBOSResolver() {
+        static bool scaned = false;
+        static auto resolver = BOSConflictResolver::GetSingleton();
+        if (ImGui::Button("Scan for Conflicts") || scaned == false) {
+            resolver->Scan("Data");
+            scaned = true;
+        }
+
+        ImGui::Separator();
+
+        const auto& conflicts = resolver->GetConflicts();
+
+        if (conflicts.empty()) {
+            ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "No conflicts found!");
+        } else {
+            for (auto& [section, secConflicts] : conflicts) {
+                // Tree node for each section
+                if (ImGui::CollapsingHeader(section.c_str())) {
+                    for (auto& [lhs, entries] : secConflicts) {
+                        if (entries.size() <= 1) continue;  // no real conflict
+
+                        // Highlight LHS in red if conflicting
+                        ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "%s", lhs.c_str());
+
+                        ImGui::Indent();
+                        for (auto& e : entries) {
+                            ImVec4 color = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+                            ImGui::TextColored(color, "%s (line %d) -> %s", e.file.c_str(), e.line, e.rhs.c_str());
+                            ImGui::Text("    %s|%s", e.lhs.c_str(), e.rhs.c_str());
+
+                            if (ImGui::Button(("Keep This##" + std::to_string(e.line) + e.file).c_str())) {
+                                for (auto& other : entries) {
+                                    if (&other != &e) {
+                                        resolver->CommentOut(other);
+                                        resolver->Scan("Data");
+                                    }
+                                }
+                                resolver->Apply(e);
+                            }
+                            if (section == "Transforms") {
+                                ImGui::SameLine();
+                                if (ImGui::Button(("Inspect##" + std::to_string(e.line) + e.file).c_str())) {
+                                    resolver->Apply(e);
+                                    resolver->Inspect(e);
+                                }
+                                ImGui::SameLine();
+                                if (ImGui::Button(("Show##" + std::to_string(e.line) + e.file).c_str())) {
+                                    resolver->Apply(e);
+                                }
+                            }
+
+                        }
+                        ImGui::Unindent();
+                    }
+                }
+            }
+        }
+    }
 
     void __stdcall RenderKIDFile() {
+
         ImGui::SeparatorText(TrStMCP::KID_editor.c_str());
-        std::string headerText = TrStMCP::KID_editor + TrStMCP::help;
+        std::string headerText = TrStMCP::KID_editor + " " + TrStMCP::help;
         if (ImGui::CollapsingHeader(headerText.c_str())) {
             ImGui::TextWrapped(TrStMCP::KID_editor_text.c_str());
         }
@@ -669,7 +733,7 @@ namespace MCP {
                 newFileBuf[0] = '\0';
             }
         } else {
-            std::string headerText = TrStMCP::enter_file_name + " _KID.ini):";
+            headerText = TrStMCP::enter_file_name + " _KID.ini):";
             ImGui::Text(headerText.c_str());
             ImGui::InputText(TrStMCP::new_file_name.c_str(), newFileBuf, sizeof(newFileBuf));
             ImGui::SameLine();

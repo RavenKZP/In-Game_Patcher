@@ -1,8 +1,6 @@
 #pragma once
 #include "ClibUtil/singleton.hpp"
 
-inline bool PatchingMode = false;
-
 namespace EventSinks {
     void Install();
 };

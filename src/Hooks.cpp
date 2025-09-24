@@ -98,7 +98,9 @@ namespace Hooks {
                         // Don't show prompt for actors
                     } else {
                         PatcherPrompt->SetRef(currentRef);
-                        SkyPromptAPI::SendPrompt(PatcherPrompt, PatcherPrompt->clientID);
+                        if (!SkyPromptAPI::SendPrompt(PatcherPrompt, PatcherPrompt->clientID)) {
+                            logger::error("Failed to send prompt");
+                        }
                     }
                 }
             }
