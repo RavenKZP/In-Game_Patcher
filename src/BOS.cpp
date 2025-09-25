@@ -21,9 +21,7 @@ bool BOSIniManager::Save() const {
         return false;
     }
 
-    bool inReferences = false;
     bool inTransforms = false;
-    bool refsWritten = false;
     bool transWritten = false;
 
     for (size_t i = 0; i < lines.size(); i++) {
@@ -32,20 +30,7 @@ bool BOSIniManager::Save() const {
         trimmed.erase(0, trimmed.find_first_not_of(" \t\r\n"));
         trimmed.erase(trimmed.find_last_not_of(" \t\r\n") + 1);
 
-        if (trimmed == "[References]") {
-            inReferences = true;
-            inTransforms = false;
-            out << line << "\n";
-
-            for (auto& [id, r] : newReferences) {
-                out << r.origRefID << "|" << r.propertyOverrides << "\n";
-            }
-            refsWritten = true;
-            continue;
-        }
-
         if (trimmed == "[Transforms]") {
-            inReferences = false;
             inTransforms = true;
             out << line << "\n";
 
@@ -56,17 +41,6 @@ bool BOSIniManager::Save() const {
             continue;
         }
 
-        // Skip duplicates (if this line corresponds to an overridden ref/transform)
-        if (inReferences) {
-            // check if line matches any newReferences origRefID
-            auto pos = line.find('|');
-            if (pos != std::string::npos) {
-                std::string refID = line.substr(0, pos);
-                if (newReferences.find(refID) != newReferences.end()) {
-                    continue;  // skip old line
-                }
-            }
-        }
         if (inTransforms) {
             auto pos = line.find('|');
             if (pos != std::string::npos) {
@@ -80,13 +54,6 @@ bool BOSIniManager::Save() const {
         out << line << "\n";
     }
 
-    // If sections didn’t exist, create them
-    if (!refsWritten && !newReferences.empty()) {
-        out << "\n[References]\n";
-        for (auto& [id, r] : newReferences) {
-            out << r.origRefID << "|" << r.propertyOverrides << "\n";
-        }
-    }
     if (!transWritten && !newTransforms.empty()) {
         out << "\n[Transforms]\n";
         for (auto& [id, t] : newTransforms) {
@@ -97,7 +64,7 @@ bool BOSIniManager::Save() const {
     return true;
 }
 
-void BOSIniManager::RemoveFromFile(const std::string& id, bool isReference) const {
+void BOSIniManager::RemoveFromFile(const std::string& id) const {
     std::ifstream in(filePath);
     if (!in.is_open()) {
         return;
@@ -116,14 +83,13 @@ void BOSIniManager::RemoveFromFile(const std::string& id, bool isReference) cons
     }
 
     bool inSection = false;
-    const std::string sectionHeader = isReference ? "[References]" : "[Transforms]";
 
     for (auto& line : lines) {
         std::string trimmed = line;
         trimmed.erase(0, trimmed.find_first_not_of(" \t\r\n"));
         trimmed.erase(trimmed.find_last_not_of(" \t\r\n") + 1);
 
-        if (trimmed == sectionHeader) {
+        if (trimmed == "[Transforms]") {
             inSection = true;
             out << line << "\n";
             continue;
@@ -151,20 +117,14 @@ void BOSIniManager::RemoveFromFile(const std::string& id, bool isReference) cons
 }
 
 bool BOSIniManager::SetFile(std::string newFilePatch) {
-    std::ifstream file(filePath);
+    std::ifstream file(newFilePatch);
     if (!file.is_open()) {
-        logger::error("File {} not found!", filePath);
+        logger::error("File {} not found!", newFilePatch);
         return false;
     }
     filePath = newFilePatch;
-    newReferences.clear();
     newTransforms.clear();
     return true;
-}
-
-void BOSIniManager::AddReference(const BOSReference& ref) {
-    newReferences[ref.origRefID] = ref;
-    Save();
 }
 
 void BOSIniManager::AddTransform(const BOSTransform& tr) {
@@ -172,27 +132,26 @@ void BOSIniManager::AddTransform(const BOSTransform& tr) {
     Save();
 }
 
-void BOSIniManager::RemoveReference(RE::TESForm* ref) {
-    if (!ref) return;
-    std::string id = Utils::NormalizeFormID(ref);
-    RemoveFromFile(id, true);
-    newReferences.erase(id);
-}
-
 void BOSIniManager::RemoveTransform(RE::TESForm* ref) {
     if (!ref) return;
     std::string id = Utils::NormalizeFormID(ref);
-    RemoveFromFile(id, false);
+    RemoveFromFile(id);
     newTransforms.erase(id);
 }
 
  
 void BOSIniManager::RemoveObject(RE::TESObjectREFR* ref) {
-     BOSReference referenceToDisable;
+     BOSTransform referenceToDisable;
      referenceToDisable.origRefID = Utils::NormalizeFormID(ref);
-     referenceToDisable.propertyOverrides = "flags(0x00000800)";
+
+     std::string PositionX = std::to_string(ref->GetPositionX());
+     std::string PositionY = std::to_string(ref->GetPositionY());
+     std::string PositionZ = "-30000.0";
+
+     referenceToDisable.propertyOverrides = "posA(" + PositionX + "," + PositionY + "," + PositionZ + ")";
+     referenceToDisable.propertyOverrides += ",flags(0x00000800)";
      RemoveTransform(ref);
-     AddReference(referenceToDisable);
+     AddTransform(referenceToDisable);
      ref->Disable();
      logger::info("Removed object: {}", ref->GetName());
  }
@@ -277,7 +236,6 @@ void BOSIniManager::RemoveObject(RE::TESObjectREFR* ref) {
      if (ref->IsDisabled()) {
          ref->Enable(false);
      }
-     RemoveReference(ref);
      RemoveTransform(ref);
 
      logger::info("Reset object {} to original transform", ref->GetName());

@@ -19,13 +19,13 @@ RE::NiObject* GetPlayer3d() {
 }
 
 namespace Hooks {
-	void Install() {
-		UpdateHook::Update_ =
+    void Install() {
+        UpdateHook::Update_ =
             REL::Relocation<std::uintptr_t>(RE::VTABLE_PlayerCharacter[0]).write_vfunc(0xAD, UpdateHook::Update);
-	}
+    }
 
-	void Hooks::UpdateHook::Update(RE::Actor* a_this, float a_delta) {
-		Update_(a_this, a_delta);
+    void Hooks::UpdateHook::Update(RE::Actor* a_this, float a_delta) {
+        Update_(a_this, a_delta);
 
         static RE::TESObjectREFR* previousObject = nullptr;
 
@@ -55,7 +55,15 @@ namespace Hooks {
                 return true;
             };
 
-            RE::TESObjectREFR* consoleRef = RE::Console::GetSelectedRef().get();
+            RE::TESObjectREFR* consoleRef = nullptr;
+
+            // The following if-else is required because the address of GetSelectedRef function changes between AE
+            // versions.
+            if (Version.compare(REL::Version(1, 6, 1130)) == std::strong_ordering::less) {
+                consoleRef = RE::Console::GetSelectedRef640().get();  // AE offset: 405935
+            } else {
+                consoleRef = RE::Console::GetSelectedRef().get();  // AE offset: 504099
+            }
 
             // Priority: console ref > raycast ref
             RE::TESObjectREFR* currentRef = nullptr;
@@ -106,7 +114,6 @@ namespace Hooks {
             }
 
             previousObject = currentRef;
-
         }
     }
 }  // namespace Hooks

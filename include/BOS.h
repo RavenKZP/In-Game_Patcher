@@ -10,25 +10,20 @@ public:
     bool Save() const;
 
     bool SetFile(std::string newFilePatch);
-    void RemoveFromFile(const std::string& id, bool isReference) const;
+    void RemoveFromFile(const std::string& id) const;
     std::string GetFile() const { return filePath; }
 
-    void AddReference(const BOSReference& ref);
     void AddTransform(const BOSTransform& tr);
-
-    void RemoveReference(RE::TESForm* ref);
     void RemoveTransform(RE::TESForm* ref);
 
     void RemoveObject(RE::TESObjectREFR* ref);
     void TransformObject(RE::TESObjectREFR* ref);
 
-    const std::unordered_map<std::string, BOSReference>& GetReferences() const { return newReferences; }
     const std::unordered_map<std::string, BOSTransform>& GetTransforms() const { return newTransforms; }
 
     void RememberOriginal(RE::TESObjectREFR* ref);
     void ResetObject(RE::TESObjectREFR* ref);
 
-    std::unordered_map<std::string, BOSReference> newReferences;
     std::unordered_map<std::string, BOSTransform> newTransforms;
 
     std::unordered_map<RE::FormID, BOSOriginalData> originalStates;

@@ -27,12 +27,6 @@ struct BOSOriginalData {
     float scale{1.0f};
 };
 
-
-struct BOSReference {
-    std::string origRefID;
-    std::string propertyOverrides;
-};
-
 struct BOSTransform {
     std::string origRefID;
     std::string propertyOverrides;

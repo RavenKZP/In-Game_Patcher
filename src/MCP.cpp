@@ -41,6 +41,8 @@ namespace MCP {
         
         RE::TESObjectREFR* ref = nullptr;
         
+        // The following if-else is required because the address of GetSelectedRef function changes between AE
+        // vesions
         if (Version.compare(REL::Version(1, 6, 1130)) == std::strong_ordering::less){
             ref = RE::Console::GetSelectedRef640().get();  // AE offset: 405935
         } else {
@@ -425,35 +427,6 @@ namespace MCP {
             }
         }
 
-        if (ImGui::CollapsingHeader(TrStMCP::removed_objects.c_str())) {
-            int idx = 0;
-            for (auto it = bosMgr->newReferences.begin(); it != bosMgr->newReferences.end();) {
-                ImGui::PushID(idx);
-
-                ImGui::Text("RefID: %s", it->second.origRefID.c_str());
-                auto ref = Utils::GetFormFromString(it->second.origRefID.c_str());
-                if (ref) {
-                    ImGui::Text("EditID: %s", ref->AsReference()->GetBaseObject()->GetFormEditorID());
-                }
-
-                OverridesData overrides = Utils::ParseOverrides(it->second.propertyOverrides);
-
-                if (ImGui::Button(TrStMCP::revert.c_str())) {
-                    if (ref) {
-                        bosMgr->ResetObject(ref->AsReference());
-                    }
-                    ImGui::PopID();
-                    break; 
-                }
-
-                ImGui::Separator();
-                ImGui::PopID();
-                ++idx;
-                ++it;
-            }
-            ImGui::BulletText(TrStMCP::revert_BOS_text.c_str());
-        }
-
         if (ImGui::CollapsingHeader(TrStMCP::transformed_objects.c_str())) {
             int idx = 0;
             for (auto it = bosMgr->newTransforms.begin(); it != bosMgr->newTransforms.end();) {
@@ -589,6 +562,14 @@ namespace MCP {
                     ImGui::PopID();
                     break;
                 }
+                ImGui::SameLine();
+                if (ImGui::Button(TrStMCP::revert.c_str())) {
+                    if (ref) {
+                        bosMgr->ResetObject(ref->AsReference());
+                    }
+                    ImGui::PopID();
+                    break;
+                }
 
                 ImGui::Separator();
                 ImGui::PopID();
@@ -597,7 +578,8 @@ namespace MCP {
             }
             ImGui::BulletText(TrStMCP::auto_save_text.c_str());
             ImGui::BulletText(TrStMCP::remove_BOS_text.c_str());
-            ImGui::BulletText(TrStMCP::reset_transform.c_str());
+            ImGui::BulletText(TrStMCP::reset_BOS_transform.c_str());
+            ImGui::BulletText(TrStMCP::revert_BOS_text.c_str());
         }
     }
     
